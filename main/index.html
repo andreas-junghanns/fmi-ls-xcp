@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 2.0.17">
+<link rel="icon" type="image/x-icon" href="images/favicon.ico">
+<title>XCP and FMI 3.0</title>
+<style>
+
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/styles/github.min.css">
+</head>
+<body class="article toc2 toc-left">
+<div id="header">
+<h1>XCP and FMI 3.0</h1>
+<div class="details">
+<span id="revnumber">version main-864ad6abb777c6ae0c92f4eb2d6295d5a48c35e7,</span>
+<span id="revdate">2022-04-26</span>
+</div>
+<div id="toc" class="toc2">
+<div id="toctitle">Contents</div>
+<ul class="sectlevel1">
+<li><a href="#_introduction">1. Introduction</a>
+<ul class="sectlevel2">
+<li><a href="#_intend_of_this_document">1.1. Intend of this Document</a></li>
+<li><a href="#_rough_outline_of_the_approach">1.2. Rough Outline of the Approach</a></li>
+<li><a href="#_comments_about_this_approach">1.3. Comments about this Approach</a></li>
+</ul>
+</li>
+<li><a href="#_details">2. Details</a>
+<ul class="sectlevel2">
+<li><a href="#_a2l_description_files">2.1. A2L Description Files</a></li>
+<li><a href="#_xcp_slave_startup_and_shutdown">2.2. XCP Slave Startup and Shutdown</a></li>
+<li><a href="#_variable_visibility">2.3. Variable Visibility</a></li>
+<li><a href="#_numeric_effects_of_xcp_access">2.4. Numeric Effects of XCP Access</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>This layered standard defines, based on FMI 3.0, how to describe and implement XCP support for FMUs.</p>
+</div>
+<div class="paragraph">
+<p><br>
+</p>
+</div>
+<div class="paragraph">
+<p>Copyright &#169; 2012-2022 The Modelica Association Project FMI.</p>
+</div>
+<div class="paragraph">
+<p>This document is licensed under the Attribution-ShareAlike 4.0 International license.
+The code is released under the 2-Clause BSD License.
+The licenses text can be found in the <a href="https://raw.githubusercontent.com/modelica/fmi-standard/master/LICENSE.txt">LICENSE.txt</a> file that accompanies this distribution.</p>
+</div>
+<div class="paragraph">
+<p></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_introduction">1. Introduction</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_intend_of_this_document">1.1. Intend of this Document</h3>
+<div class="paragraph">
+<p>FMI 3.0 was extended also with virtual Electronic Control Units (virtual ECUs) in mind.
+Engineers can measure into ECUs using the XCP protocol and A2L variable descriptions:</p>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p>The ASAM MCD-1 XCP (Universal Measurement and Calibration Protocol) standard defines a bus-independent, master-slave communication protocol to connect ECUs with calibration systems.
+XCP is short for Universal Measurement and Calibration Protocol. The primary purpose of XCP is to adjust internal parameters and acquire the current values of internal variables of an ECU.
+The first letter X in XCP expresses the fact that the protocol is designed for a variety of bus systems.
+The standard consists of a base standard, which describes memory-oriented protocol services without direct dependencies on specific bus systems.
+Several associate standards contain the transport layer definitions for CAN, FlexRay, Ethernet (UDP/IP and TCP/IP), serial links (SPI and SCI) and USB.</p>
+</div>
+</blockquote>
+<div class="attribution">
+&#8212; ASAM e.V.<br>
+<cite>https://www.asam.net/standards/detail/mcd-1-xcp/[ASAM MCD-1 XCP]</cite>
+</div>
+</div>
+<div class="paragraph">
+<p>This layered standard describes how an FMU advertises its XCP capabilities to importers and MCD tools using the XCP protocol.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_rough_outline_of_the_approach">1.2. Rough Outline of the Approach</h3>
+<div class="paragraph">
+<p>The XCP description file for the virtual ECU wrapped as FMU will be placed into the <code>/extra/org.modelica.fmi.layered_XCP</code> folder.
+This description file follows the <a href="https://www.asam.net/standards/detail/mcd-2-mc/">ASAM MCD-2 MC</a> standard (aka <code>ASAP2</code>, also <code>A2L</code>) and customarily carries the file extension <code>.a2l</code>.</p>
+</div>
+<div class="quoteblock">
+<blockquote>
+<div class="paragraph">
+<p>ASAM MCD-2 MC (aka ASAP2) defines the description format of the internal ECU variables used in measurement and calibration.
+Measurement &amp; calibration systems (MC-systems) require this description for both the parameterization of scalar constants, curves and maps of the ECU software and for recording the system&#8217;s response via measurement variables during real-time testing.
+The description contains information about data types, dimensions, record layouts and memory locations of ECU variables.
+The standard also describes how the variable values are converted into human-readable quantities and displayed in an MC-system.</p>
+</div>
+</blockquote>
+<div class="attribution">
+&#8212; ASAM e.V.<br>
+<cite>https://www.asam.net/standards/detail/mcd-2-mc/[ASAM MCD-2 MC]</cite>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_comments_about_this_approach">1.3. Comments about this Approach</h3>
+<div class="paragraph">
+<p><em>[This standard will have no effect on the FMU interface, nor the C-API behavior.</em>
+<em>The XCP slave inside the FMU will most likely run in its own thread and leave the rest of the operation of the FMU unaffected.</em>
+<em>The FMU must configure the XCP slave and trigger certain actions and provide timing information.</em>
+<em>This approach can also be used for plant models when the FMU exporter can generate an appropriate <code>A2L</code> file.</em>
+<em>It is assumed that the XCP slave (in the FMU) communicates with the XCP master (in the MC tool) using a separate bus channel, e.g. the IP stack of the host OS.</em>
+<em>Thus, the communication of the XCP service is not mixed with the simulated bus communication of the ECU wrapped in the FMU.]</em></p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_details">2. Details</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_a2l_description_files">2.1. A2L Description Files</h3>
+<div class="paragraph">
+<p>FMI 3.0 introduces an <code>/extra</code> folder in its <code>zip</code> structure.
+The A2L description files will be placed under the reverse domain name controlled by the MAP FMI: <code>/extra/org.modelica.fmi.layered_XCP</code>.
+All versions of the <code>A2L</code> standard are allowed and it is the MCD tool&#8217;s responsibility to handle each version correctly.
+It is currently not recommended to supply multiple versions of the <code>A2L</code> file due to their considerable size.
+The root name of the description files shall be identical to the FMU name and are case sensitive.</p>
+</div>
+<div class="paragraph">
+<p>This standard forbids the use of the <code>including mechanism</code> of additional <code>A2L</code> files to simplify complete extraction and copying of <code>A2L</code> files.</p>
+</div>
+<div class="paragraph">
+<p>It is recommended to include <code>IF_DATA XCP</code> elements to help MCD tools to connect and interact with the XCP slave inside the FMU more reliably and without user interaction.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_xcp_slave_startup_and_shutdown">2.2. XCP Slave Startup and Shutdown</h3>
+<div class="paragraph">
+<p>It is recommended to start the XCP service during <code>fmi3EnterInitializationMode</code> (or earlier) and shut down during <code>fmi3Terminate</code> (or later) if the FMU has no explicit power-up signal to simplify user interactions between simulator and MCD tool.</p>
+</div>
+<div class="paragraph">
+<p>If the FMU contains a virtual ECU with power-up control (K15), all build in OS and Basic Software services (including XCP) should follow normal power-up protocol.</p>
+</div>
+<div class="paragraph">
+<p><em>[The A2L/XCP standards allow to measure variables synchronous to different time- or angular-based events.</em>
+<em>This requires to invoke the XCP service with a so-called raster ID in the thread which is executed for an event.</em>
+<em>Calibration is typically performed in a background thread.</em>
+<em>Refer to the A2L/XCP standards for more information.]</em></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_variable_visibility">2.3. Variable Visibility</h3>
+<div class="paragraph">
+<p><code>modelDescription.xml</code> files publish a certain set of variables and parameters.
+The <code>A2L</code> file also publishes a set of FMU variables and parameters.
+This standard expressly does not restrict the relationship between both sets of variables.</p>
+</div>
+<div class="paragraph">
+<p><em>[As a matter of fact, it is quite likely that the variables published in <code>modelDescription.xml</code> is a minimal set required for connectivity reasons.</em>
+<em>The <code>A2L</code> file might publish a much larger set of variables and parameters that the user can selectively chose to measure or calibrate.]</em></p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_numeric_effects_of_xcp_access">2.4. Numeric Effects of XCP Access</h3>
+<div class="paragraph">
+<p>While measurement of FMU internal variables does not have a numeric effect on the FMU, so called calibration does.
+Calibration is the tuning of FMU internal parameters.
+Such changes will affect the numeric behavior of the FMU.
+If the FMU contains controller code, numeric stability or energy preservation laws are of lesser concern.
+On the other hand, plant models offering XCP access for parameter calibration may introduce surprising numerical effects in solvers that might require proper handling, like resetting solvers with every XCP write action.</p>
+</div>
+<div class="paragraph">
+<p>It is therefore necessary to synchronize XCP variable access (read and write) with the state of the FMU.
+<em>[For instance is time not linear in Model Exchange and Intermediate Variable Access might also introduce surprising measurements in Co-Simulation.</em>
+<em>Appropriate care must be taken when to serve XCP master requests to ensure simulation and measurement integrity.]</em></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.18.3/highlight.min.js"></script>
+<script>
+if (!hljs.initHighlighting.called) {
+  hljs.initHighlighting.called = true
+  ;[].slice.call(document.querySelectorAll('pre.highlight > code')).forEach(function (el) { hljs.highlightBlock(el) })
+}
+</script>
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  messageStyle: "none",
+  tex2jax: {
+    inlineMath: [["\\(", "\\)"]],
+    displayMath: [["\\[", "\\]"]],
+    ignoreClass: "nostem|nolatexmath"
+  },
+  asciimath2jax: {
+    delimiters: [["\\$", "\\$"]],
+    ignoreClass: "nostem|noasciimath"
+  },
+  TeX: { equationNumbers: { autoNumber: "none" } }
+})
+MathJax.Hub.Register.StartupHook("AsciiMath Jax Ready", function () {
+  MathJax.InputJax.AsciiMath.postfilterHooks.Add(function (data, node) {
+    if ((node = data.script.parentNode) && (node = node.parentNode) && node.classList.contains("stemblock")) {
+      data.math.root.display = "block"
+    }
+    return data
+  })
+})
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js?config=TeX-MML-AM_HTMLorMML"></script>
+</body>
+</html>
